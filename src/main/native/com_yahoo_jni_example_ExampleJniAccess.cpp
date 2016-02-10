@@ -138,4 +138,6 @@ JNIEXPORT void JNICALL Java_com_yahoo_jni_example_ExampleJniAccess_executeCWithC
     // To have a c function make a callback that calls java we need a callback adapter.
 
     magicCFunction(context, report_callback_adaptor);
+
+    free(context);
 }
