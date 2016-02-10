@@ -13,5 +13,7 @@ public interface ExampleInterface {
      * 
      * @param cb an implementation of {@link CallbackInterface} that gets called from the jni.
      */
-    public void execute(CallbackInterface cb);
+    void executeInSameThread(CallbackInterface cb);
+
+    void executeInNewThread(CallbackInterface cb);
 }

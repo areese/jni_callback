@@ -7,5 +7,6 @@ typedef void (*report_fn)(void *ctx, int kind, const char *arg1, int len1,
         const char *arg2, int len2, const char *arg3, int len3);
 
 int magicCFunction(void *ctx, report_fn reportBack);
+int callbackFromANewThread(void *ctx, report_fn reportBack);
 
 #endif //_callbacklib_h_

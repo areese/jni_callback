@@ -15,9 +15,10 @@ public class CallbackImplementation implements CallbackInterface {
 
     @Override
     public void report(int kind, String name, String value, String reason) {
-        System.err.println("Got callback " + kind + " with name=" + name + " value=" + value + " because " + reason);
-        // just because it's interesting to understand how we got here.
-        new Exception().printStackTrace();
+        System.err.println("Got callback " + kind + " with name=" + name + " value=" + value + " because " + reason + " in thread " +Thread.currentThread().getId());
+        // // just because it's interesting to understand how we got here.
+        // new Exception().printStackTrace();
+        
     }
 
 }

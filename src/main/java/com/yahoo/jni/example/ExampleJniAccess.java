@@ -10,5 +10,9 @@ package com.yahoo.jni.example;
  *
  */
 class ExampleJniAccess {
-    static final native void executeCWithCallBack(CallbackInterface cb);
+    static final native void executeCWithCallBackInSameThread(CallbackInterface cb);
+
+    static final native void executeCWithCallBackInNewThread(CallbackInterface cb);
+
+    static final native void executeCWithCallBackInSharedThread(CallbackInterface cb);
 }

@@ -43,7 +43,38 @@ enum AttachType {
      * See http://stackoverflow.com/questions/20325792/java-thread-leaks-when-calling-back-from-native-thread-via-jni and https://bugs.openjdk.java.net/browse/JDK-8033696
      * for an explanation of what can go wrong here.
      */
-    ATTACH_WITH_TLS_DETACH
+    ATTACH_WITH_TLS_DETACH,
+
+    /**
+     * This will attach for you when EDETACHED is returned, but assumes you will call DetachCurrentThread() at the end of the callback adaptor.
+     * You have to use NewGlobalRef on the objects handed around this way.
+     * You also have to remember to free them..
+     */
+    ATTACH_AND_DETACH_AFTER_CALLBACK,
+};
+
+/**
+ * When passing objects across threads, you need a GlobalRef of the object to ensure it doesn't get free'd before the other thread gets a chance to do the callback.
+ * Prob better done with a combination shared pointer and NewGlobalRef, but for right now NewGlobalRef is done in thread one, and this is in thread 2.
+ */
+class GlobalRefDestructor {
+private:
+    JNIEnv *jenv;
+    jobject ref;
+
+public:
+    GlobalRefDestructor(JNIEnv *jenv, jobject ref) :
+            jenv(jenv), ref(ref) {
+    }
+    ;
+
+    ~GlobalRefDestructor() {
+        if (NULL != jenv && NULL != ref) {
+            jenv->DeleteGlobalRef(ref);
+            jenv = NULL;
+            ref = NULL;
+        }
+    }
 };
 
 /**
@@ -61,5 +92,22 @@ typedef struct {
 extern JavaVM *global_jvm;
 
 JNIEnv *getJNIEnvFromJavaVM(JavaVM *jvm, AttachType attachType);
+
+/**
+ * This class can be used in the callback adapter.
+ */
+class ScopedDetach {
+public:
+    JNIEnv *jenv;
+
+    ScopedDetach() {
+        jenv = getJNIEnvFromJavaVM(global_jvm,
+                ATTACH_AND_DETACH_AFTER_CALLBACK);
+    }
+
+    ~ScopedDetach() {
+        global_jvm->DetachCurrentThread();
+    }
+};
 
 #endif //_CALLBACK_SUPPORT_H_

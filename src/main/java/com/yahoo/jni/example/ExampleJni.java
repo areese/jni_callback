@@ -15,7 +15,13 @@ public class ExampleJni implements ExampleInterface {
     }
 
     @Override
-    public void execute(CallbackInterface cb) {
-        ExampleJniAccess.executeCWithCallBack(cb);
+    public void executeInSameThread(CallbackInterface cb) {
+        ExampleJniAccess.executeCWithCallBackInSameThread(cb);
+    }
+
+
+    @Override
+    public void executeInNewThread(CallbackInterface cb) {
+        ExampleJniAccess.executeCWithCallBackInNewThread(cb);
     }
 }

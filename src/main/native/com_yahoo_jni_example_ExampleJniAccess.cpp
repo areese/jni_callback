@@ -52,9 +52,14 @@ void report_callback_adaptor(void *voidContextPtr, int kind, const char *arg1,
         return;
     }
 
+    GlobalRefDestructor refDestructor(jenv, context->object);
+
     // get the method and cache it.
     GET_CACHED_METHOD_ID(jenv, reportID);
     RETURN_AND_THROW_IF_NULL(reportID, "getting reportID");
+
+    RETURN_AND_THROW_IF_NULL(context->object, "Null object in context");
+
 
     jstring str1 = NULL;
     jstring str2 = NULL;
@@ -110,10 +115,10 @@ void report_callback_adaptor(void *voidContextPtr, int kind, const char *arg1,
 
 /*
  * Class:     com_yahoo_jni_example_ExampleJniAccess
- * Method:    executeCWithCallBack
+ * Method:    executeCWithCallBackInSameThread
  * Signature: (Lcom/yahoo/jni/example/CallbackInterface;)V
  */
-JNIEXPORT void JNICALL Java_com_yahoo_jni_example_ExampleJniAccess_executeCWithCallBack
+JNIEXPORT void JNICALL Java_com_yahoo_jni_example_ExampleJniAccess_executeCWithCallBackInSameThread
 (JNIEnv *jenv, jclass thisClass, jobject callbackObject)
 {
     if (NULL==jenv || NULL==thisClass || NULL==callbackObject) {
@@ -140,4 +145,37 @@ JNIEXPORT void JNICALL Java_com_yahoo_jni_example_ExampleJniAccess_executeCWithC
     magicCFunction(context, report_callback_adaptor);
 
     free(context);
+}
+
+/*
+ * Class:     com_yahoo_jni_example_ExampleJniAccess
+ * Method:    executeCWithCallBackInNewThread
+ * Signature: (Lcom/yahoo/jni/example/CallbackInterface;)V
+ */
+JNIEXPORT void JNICALL Java_com_yahoo_jni_example_ExampleJniAccess_executeCWithCallBackInNewThread
+(JNIEnv *jenv, jclass thisClass, jobject callbackObject)
+{
+    if (NULL==jenv || NULL==thisClass || NULL==callbackObject) {
+        return;
+    }
+
+    // First we need to setup the context we are passing to the function.
+    // If it's async, we should use a shared pointer, or we should be passing a free function in the context.
+    report_callback_context_t *context = (report_callback_context_t *)calloc(1,sizeof(report_callback_context_t));
+    // this should probably throw OOME instead of NPE
+    RETURN_AND_THROW_IF_NULL(context, "allocation failure");
+
+    // set the attach type based on your intent.
+    // in this case, we're not async, and we're not making the callback from another thread, so we can use NEVER_ATTACH
+    // If we are in another thread, it depends on the lifetime.
+    // For new threads, you can attach forever, but the jvm will wait for them to exit.
+    // You can attach as a daemon, but the jvm could exit while that thread is busy.
+    // You can attach and detach using a pthreads destructor to detach, but jdks older than 7u80, 8u20 will not detach.
+    context->attach = NEVER_ATTACH;
+    //FIXME need to release this later.
+    context->object = jenv->NewGlobalRef(callbackObject);
+
+    // To have a c function make a callback that calls java we need a callback adapter.
+    // this function free's context.
+    callbackFromANewThread(context, report_callback_adaptor);
 }
