@@ -60,7 +60,6 @@ void report_callback_adaptor(void *voidContextPtr, int kind, const char *arg1,
 
     RETURN_AND_THROW_IF_NULL(context->object, "Null object in context");
 
-
     jstring str1 = NULL;
     jstring str2 = NULL;
     jstring str3 = NULL;
@@ -171,7 +170,7 @@ JNIEXPORT void JNICALL Java_com_yahoo_jni_example_ExampleJniAccess_executeCWithC
     // For new threads, you can attach forever, but the jvm will wait for them to exit.
     // You can attach as a daemon, but the jvm could exit while that thread is busy.
     // You can attach and detach using a pthreads destructor to detach, but jdks older than 7u80, 8u20 will not detach.
-    context->attach = NEVER_ATTACH;
+    context->attach = ATTACH_AND_DETACH_AFTER_CALLBACK;
     //FIXME need to release this later.
     context->object = jenv->NewGlobalRef(callbackObject);
 
