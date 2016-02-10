@@ -2,6 +2,15 @@
 // Licensed under the terms of the New-BSD license. Please see LICENSE file in the project root for terms.
 package com.yahoo.jni.example;
 
+
+/**
+ * This singleton class exists to make it easier to load a native library by just tickling load. It also prints out a
+ * helpful error message and java.library.path when things go south, as that's much easier to debug then
+ * {@link NoClassDefFoundError} or {@link UnsatisfiedLinkError}...
+ * 
+ * @author areese
+ *
+ */
 public class JniLibraryLoader {
     static final String LIBRARY = "jni_callback";
     static {

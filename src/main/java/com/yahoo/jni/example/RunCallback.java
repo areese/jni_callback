@@ -3,7 +3,8 @@
 package com.yahoo.jni.example;
 
 /**
- * Run with java -Djava.library.path=target/native
+ * Run with java -cp target/classes -Djava.library.path=target/native/x86_64-linux-gcc com.yahoo.jni.example.RunCallback
+ * or java -cp target/classes -Djava.library.path=target/native/x86_64-darwin-clang com.yahoo.jni.example.RunCallback
  * 
  * @author areese
  *
