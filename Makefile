@@ -34,8 +34,8 @@ OBJECTS=$(SOURCES:$(SOURCES_DIR)/%.cpp=$(OBJECTS_DIR)/%.o)
 JAVA_LIBRARY_PATH=$(JAVA_HOME)/jre/lib/$(LINUX_ADD)server/
 JAVA_INCLUDES=-I$(JAVA_HOME)/include/ -I$(JAVA_HOME)/include/$(JAVA_OS)/ -L$(JAVA_LIBRARY_PATH)
 
-CXXFLAGS=$(JAVA_INCLUDES) -I$(SOURCES_DIR)  -g -O0  -shared -fPIC
-LFLAGS = -Wall -lpthread 
+CXXFLAGS=$(JAVA_INCLUDES) -I$(SOURCES_DIR)  -g -O0   -fPIC -std=c++11 -stdlib=libc++ 
+LFLAGS = -Wall -lpthread -shared
 
 LIBNAME=libjni_callback.$(EXT)
 

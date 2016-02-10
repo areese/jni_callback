@@ -8,8 +8,15 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <memory>
+
 // can't live without all my macros.
 #include "jni_helper_defines.h"
+
+/**
+ * Exported here in case others need it.
+ */
+extern JavaVM *global_jvm;
 
 /**
  * This is how we should attach the thread to the JVM.
@@ -53,6 +60,8 @@ enum AttachType {
     ATTACH_AND_DETACH_AFTER_CALLBACK,
 };
 
+JNIEnv *getJNIEnvFromJavaVM(JavaVM *jvm, AttachType attachType);
+
 /**
  * When passing objects across threads, you need a GlobalRef of the object to ensure it doesn't get free'd before the other thread gets a chance to do the callback.
  * Prob better done with a combination shared pointer and NewGlobalRef, but for right now NewGlobalRef is done in thread one, and this is in thread 2.
@@ -77,21 +86,44 @@ public:
     }
 };
 
+class JavaReference {
+private:
+    JavaVM *jvm;
+    jobject ref;
+    AttachType attachType;
+
+public:
+    JavaReference(JavaVM *jvm, jobject ref, AttachType attachType) :
+            jvm(jvm), attachType(attachType) {
+        JNIEnv *jenv = getJNIEnvFromJavaVM(jvm, attachType);
+        this->ref = jenv->NewGlobalRef(ref);
+    }
+
+    ~JavaReference() {
+        release();
+    }
+
+    jobject get() {
+        return ref;
+    }
+
+    void release() {
+        if (NULL != ref) {
+            JNIEnv *jenv = getJNIEnvFromJavaVM(this->jvm, this->attachType);
+            jenv->DeleteGlobalRef(this->ref);
+            this->ref = NULL;
+        }
+    }
+};
+
 /**
  * This is the struct we pass into the c callback as a void*
  * the object within is an implementation of com.yahoo.jni.example.CallbackInterface
  */
 typedef struct {
-    jobject object;
+    std::shared_ptr<JavaReference> object;
     AttachType attach;
 } report_callback_context_t;
-
-/**
- * Exported here in case others need it.
- */
-extern JavaVM *global_jvm;
-
-JNIEnv *getJNIEnvFromJavaVM(JavaVM *jvm, AttachType attachType);
 
 /**
  * This class can be used in the callback adapter.

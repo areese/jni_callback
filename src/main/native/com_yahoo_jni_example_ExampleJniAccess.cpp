@@ -6,14 +6,13 @@
 
 // can't live without all my macros.
 #include "jni_helper_defines.h"
-
 // this is some little support library for callbacks.
 #include "callback_support.h"
-
 // this contains the c function that invokes the callback
 #include "callbacklib.h"
-
 #include "com_yahoo_jni_example_ExampleJniAccess.h"
+
+#define CONTEXT_OBJ context->object.get()->get()
 
 // simply fully qualified java class name with . changed to /
 DECLARE_CACHED_CLASS(reportCallbackClass,
@@ -52,13 +51,11 @@ void report_callback_adaptor(void *voidContextPtr, int kind, const char *arg1,
         return;
     }
 
-    GlobalRefDestructor refDestructor(jenv, context->object);
-
     // get the method and cache it.
     GET_CACHED_METHOD_ID(jenv, reportID);
     RETURN_AND_THROW_IF_NULL(reportID, "getting reportID");
 
-    RETURN_AND_THROW_IF_NULL(context->object, "Null object in context");
+    RETURN_AND_THROW_IF_NULL(CONTEXT_OBJ, "Null object in context");
 
     jstring str1 = NULL;
     jstring str2 = NULL;
@@ -104,7 +101,7 @@ void report_callback_adaptor(void *voidContextPtr, int kind, const char *arg1,
         free(buffer);
     }
 
-    jenv->CallVoidMethod(context->object, reportID, kind, str1, str2, str3);
+    jenv->CallVoidMethod(CONTEXT_OBJ, reportID, kind, str1, str2, str3);
 
     // release our refs now.
     jenv->DeleteLocalRef(str1);
@@ -128,7 +125,7 @@ JNIEXPORT void JNICALL Java_com_yahoo_jni_example_ExampleJniAccess_executeCWithC
     // If it's async, we should use a shared pointer, or we should be passing a free function in the context.
     report_callback_context_t *context = (report_callback_context_t *)calloc(1,sizeof(report_callback_context_t));
     // this should probably throw OOME instead of NPE
-    RETURN_AND_THROW_IF_NULL(context, "allocation failure");
+    //RETURN_AND_THROW_IF_NULL(context, "allocation failure");
 
     // set the attach type based on your intent.
     // in this case, we're not async, and we're not making the callback from another thread, so we can use NEVER_ATTACH
@@ -137,9 +134,9 @@ JNIEXPORT void JNICALL Java_com_yahoo_jni_example_ExampleJniAccess_executeCWithC
     // You can attach as a daemon, but the jvm could exit while that thread is busy.
     // You can attach and detach using a pthreads destructor to detach, but jdks older than 7u80, 8u20 will not detach.
     context->attach = NEVER_ATTACH;
-    context->object = callbackObject;
+    context->object = std::make_shared<JavaReference>(global_jvm, callbackObject, context->attach);
 
-    // To have a c function make a callback that calls java we need a callback adapter.
+// To have a c function make a callback that calls java we need a callback adapter.
 
     magicCFunction(context, report_callback_adaptor);
 
@@ -172,7 +169,7 @@ JNIEXPORT void JNICALL Java_com_yahoo_jni_example_ExampleJniAccess_executeCWithC
     // You can attach and detach using a pthreads destructor to detach, but jdks older than 7u80, 8u20 will not detach.
     context->attach = ATTACH_AND_DETACH_AFTER_CALLBACK;
     //FIXME need to release this later.
-    context->object = jenv->NewGlobalRef(callbackObject);
+    context->object = std::make_shared<JavaReference>(global_jvm, callbackObject, context->attach);
 
     // To have a c function make a callback that calls java we need a callback adapter.
     // this function free's context.
